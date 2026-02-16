@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const SALT = bcrypt.genSaltSync(10);
 require("dotenv").config();
 const JWT_SECRET = process.env.JWT_SECRET;
+const cloudinary = require("../config/cloudinary.config");
 
 const signUp = async (req, res) => {
     const {fullName, email, password} = req.body;
@@ -58,9 +59,74 @@ const signOut = async (req, res) => {
     res.status(500).json({message: "Internal server error while logging out"});
  } 
 }
+// Update User Profile FullName profilePic=we will use cloudinary to store profile picture
+const updateProfile = async (req, res) => {
+    try {
+        //we will have 3 case 1 user only udate fullname case 2 user only update profile picture case 3 user update both fullname and profile picture
+        const fullName = req.body?.fullName;
+        const profilePic = req.body?.profilePic;
+        const user = req.user._id;
+        if(fullName && profilePic) {
+            //upload fullname and profilePic to cloudinary
+            const uploadResponse = await cloudinary.uploader.upload(profilePic);
+            if(!uploadResponse){
+                return res.status(500).json({message: "Failed to upload profile picture"});
+            }
+            const userUpdated = await User.findByIdAndUpdate(user._id, {fullName, profilePic: uploadResponse.secure_url}, {new: true});
+            if(!userUpdated){
+                return res.status(500).json({message: "Internal server error while updating profile"});
+            }
+            return res.status(200).json({message: "Profile updated successfully"});
+        } else if(fullName){
+            const userUpdated = await User.findByIdAndUpdate(user._id, {fullName}, {new: true});
+            if(!userUpdated){
+                return res.status(500).json({message: "Internal server error while updating profile"});
+            }
+            return res.status(200).json({message: "Profile updated successfully"});
+        } else if(profilePic){
+            const uploadResponse = await cloudinary.uploader.upload(profilePic);
+            if(!uploadResponse){
+                return res.status(500).json({message: "Failed to upload profile picture"});
+            }
+            const userUpdated = await User.findByIdAndUpdate(user._id, {profilePic: uploadResponse.secure_url}, {new: true});
+            if(!userUpdated){
+                return res.status(500).json({message: "Internal server error while updating profile"});
+            }
+            return res.status(200).json({message: "Profile updated successfully"});
+        } else {
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message: "Internal server error while updating profile"});
+    }
+}
+
+// Get all users except the logged-in user
+const getUsers = async (req, res) => {
+    try {
+        const users = await User.find({ _id: { $ne: req.user._id } }).select("-password");
+        res.status(200).json({ users });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Internal server error while fetching users" });
+    }
+}
+
+//check auth/user online
+const checkAuth = async (req, res) => {
+    try {
+        res.status(200).json({user: req.user});
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message: "Internal server error while checking auth"});
+    }
+}
 
 module.exports = {
     signUp,
     signIn,
-    signOut
+    signOut,
+    updateProfile,
+    checkAuth,
+    getUsers
 }
