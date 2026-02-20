@@ -1,19 +1,19 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MessageSquare, User, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "../lib/axios";
 import AuthImagePattern from "../components/AuthImagePattern";
+import { useAuthStore } from "../store/useAuthStore";
 
-const SignUpPage = ({ setAuthUser }) => {
+const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
   });
-  const navigate = useNavigate();
+  const {signUp , isSignUp} = useAuthStore();
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,17 +23,16 @@ const SignUpPage = ({ setAuthUser }) => {
     if (formData.password.length < 6) {
       return toast.error("Password must be at least 6 characters");
     }
-    setIsLoading(true);
-    try {
-      const res = await axiosInstance.post("/auth/signup", formData);
-      setAuthUser(res.data.user);
-      toast.success("Account created successfully");
-      navigate("/");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
-    } finally {
-      setIsLoading(false);
+    if (!/^[a-zA-Z0-9]+$/.test(formData.fullName)) {
+      return toast.error("full name is not valid");
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      return toast.error("email is not valid");
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(formData.password)) {
+      return toast.error("password is not valid");
+    }
+    await signUp(formData);
   };
 
   return (
@@ -127,9 +126,9 @@ const SignUpPage = ({ setAuthUser }) => {
             <button
               type="submit"
               className="btn btn-primary w-full"
-              disabled={isLoading}
+              disabled={isSignUp}
             >
-              {isLoading ? (
+              {isSignUp ? (
                 <>
                   <Loader2 className="size-5 animate-spin" />
                   Loading...

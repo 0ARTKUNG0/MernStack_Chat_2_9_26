@@ -25,7 +25,8 @@ const signUp = async (req, res) => {
             sameSite: "strict",
             maxAge: 24 * 60 * 60 * 1000
         });
-        res.status(201).json({user});
+        const userWithoutPassword = await User.findById(user._id).select("-password");
+        res.status(201).json({user: userWithoutPassword});
      } catch (error) {
         console.log(error);
         res.status(500).json({message: "Internal server error"});
@@ -45,9 +46,15 @@ const signIn = async (req, res) => {
     if(!isPasswordValid){
         return res.status(400).json({message: "Invalid password"});
     }
-    const token = jwt.sign({id: user._id}, JWT_SECRET);
-    res.cookie("jwtcookie", token);
-    res.status(200).json({user});
+    const token = jwt.sign({id: user._id}, JWT_SECRET, {expiresIn: "1d"});
+    res.cookie("jwtcookie", token, {
+        httpOnly: true,
+        secure: process.env.NODE_MODE === "production",
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000
+    });
+    const userWithoutPassword = await User.findById(user._id).select("-password");
+    res.status(200).json({user: userWithoutPassword});
 }
 
 const signOut = async (req, res) => {
@@ -72,27 +79,27 @@ const updateProfile = async (req, res) => {
             if(!uploadResponse){
                 return res.status(500).json({message: "Failed to upload profile picture"});
             }
-            const userUpdated = await User.findByIdAndUpdate(user._id, {fullName, profilePic: uploadResponse.secure_url}, {new: true});
+            const userUpdated = await User.findByIdAndUpdate(user, {fullName, profilePic: uploadResponse.secure_url}, {new: true});
             if(!userUpdated){
                 return res.status(500).json({message: "Internal server error while updating profile"});
             }
-            return res.status(200).json({message: "Profile updated successfully"});
+            return res.status(200).json({message: "Profile updated successfully", user: userUpdated});
         } else if(fullName){
-            const userUpdated = await User.findByIdAndUpdate(user._id, {fullName}, {new: true});
+            const userUpdated = await User.findByIdAndUpdate(user, {fullName}, {new: true});
             if(!userUpdated){
                 return res.status(500).json({message: "Internal server error while updating profile"});
             }
-            return res.status(200).json({message: "Profile updated successfully"});
+            return res.status(200).json({message: "Profile updated successfully", user: userUpdated});
         } else if(profilePic){
             const uploadResponse = await cloudinary.uploader.upload(profilePic);
             if(!uploadResponse){
                 return res.status(500).json({message: "Failed to upload profile picture"});
             }
-            const userUpdated = await User.findByIdAndUpdate(user._id, {profilePic: uploadResponse.secure_url}, {new: true});
+            const userUpdated = await User.findByIdAndUpdate(user, {profilePic: uploadResponse.secure_url}, {new: true});
             if(!userUpdated){
                 return res.status(500).json({message: "Internal server error while updating profile"});
             }
-            return res.status(200).json({message: "Profile updated successfully"});
+            return res.status(200).json({message: "Profile updated successfully", user: userUpdated});
         } else {
         }
     } catch (error) {

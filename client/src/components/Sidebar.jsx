@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
-import axiosInstance from "../lib/axios";
+import API from "../services/api";
 
 const Sidebar = ({ selectedUser, setSelectedUser }) => {
   const [users, setUsers] = useState([]);
@@ -12,7 +12,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axiosInstance.get("/auth/users");
+      const res = await API.get("/api/v1/auth/users");
       setUsers(res.data.users);
     } catch (error) {
       console.log("Failed to fetch users:", error);

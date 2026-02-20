@@ -1,35 +1,24 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MessageSquare, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import axiosInstance from "../lib/axios";
 import AuthImagePattern from "../components/AuthImagePattern";
+import { useAuthStore } from "../store/useAuthStore";
 
-const SignInPage = ({ setAuthUser }) => {
+const SignInPage = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-  const navigate = useNavigate();
+  const { signIn, isSignIn } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
       return toast.error("All fields are required");
     }
-    setIsLoading(true);
-    try {
-      const res = await axiosInstance.post("/auth/signin", formData);
-      setAuthUser(res.data.user);
-      toast.success("Signed in successfully");
-      navigate("/");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
+    await signIn(formData);
   };
 
   return (
@@ -101,9 +90,9 @@ const SignInPage = ({ setAuthUser }) => {
             <button
               type="submit"
               className="btn btn-primary w-full"
-              disabled={isLoading}
+              disabled={isSignIn}
             >
-              {isLoading ? (
+              {isSignIn ? (
                 <>
                   <Loader2 className="size-5 animate-spin" />
                   Loading...

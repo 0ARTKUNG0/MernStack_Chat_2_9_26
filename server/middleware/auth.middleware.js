@@ -7,7 +7,7 @@ const protectedRoute = async (req, res, next) => {
     try {
         const token = req.cookies.jwtcookie;
         if(!token){
-            res.status(401).json({message: "Unauthorized - No token provided"});
+            res.status(401).json({message: "Unauthorized - Pls login or register first"});
             return;
         }
         //check token is valid

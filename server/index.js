@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT;
 const MONGODB_URL = process.env.MONGODB_URL;
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 const allowedOrigins = [process.env.BASE_URL];
 

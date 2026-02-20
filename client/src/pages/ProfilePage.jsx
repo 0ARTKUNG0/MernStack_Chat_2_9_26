@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Camera, User, Mail, Loader2 } from "lucide-react";
-import toast from "react-hot-toast";
-import axiosInstance from "../lib/axios";
+import { useAuthStore } from "../store/useAuthStore";
 
-const ProfilePage = ({ authUser, setAuthUser }) => {
+const ProfilePage = () => {
+  const { authUser, updateProfile, isUpdateProfile } = useAuthStore();
   const [fullName, setFullName] = useState(authUser?.fullName || "");
   const [profilePic, setProfilePic] = useState(null);
-  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -15,35 +14,15 @@ const ProfilePage = ({ authUser, setAuthUser }) => {
     reader.onloadend = async () => {
       const base64Image = reader.result;
       setProfilePic(base64Image);
-      setIsUpdating(true);
-      try {
-        const res = await axiosInstance.put("/auth/update-profile", {
-          profilePic: base64Image,
-        });
-        toast.success("Profile picture updated");
-        setAuthUser({ ...authUser, profilePic: base64Image });
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to update picture");
-      } finally {
-        setIsUpdating(false);
-      }
+      await updateProfile({ profilePic: base64Image });
     };
     reader.readAsDataURL(file);
   };
 
   const handleUpdateName = async () => {
-    if (!fullName.trim()) return toast.error("Name cannot be empty");
+    if (!fullName.trim()) return;
     if (fullName === authUser?.fullName) return;
-    setIsUpdating(true);
-    try {
-      await axiosInstance.put("/auth/update-profile", { fullName });
-      setAuthUser({ ...authUser, fullName });
-      toast.success("Name updated successfully");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update name");
-    } finally {
-      setIsUpdating(false);
-    }
+    await updateProfile({ fullName });
   };
 
   const displayPic = profilePic || authUser?.profilePic;
@@ -74,7 +53,7 @@ const ProfilePage = ({ authUser, setAuthUser }) => {
               <label
                 htmlFor="avatar-upload"
                 className={`absolute bottom-0 right-0 bg-base-content hover:scale-105 p-2 rounded-full cursor-pointer transition-all duration-200 ${
-                  isUpdating ? "animate-pulse pointer-events-none" : ""
+                  isUpdateProfile ? "animate-pulse pointer-events-none" : ""
                 }`}
               >
                 <Camera className="w-5 h-5 text-base-200" />
@@ -84,12 +63,12 @@ const ProfilePage = ({ authUser, setAuthUser }) => {
                   className="hidden"
                   accept="image/*"
                   onChange={handleImageUpload}
-                  disabled={isUpdating}
+                  disabled={isUpdateProfile}
                 />
               </label>
             </div>
             <p className="text-sm text-zinc-400">
-              {isUpdating
+              {isUpdateProfile
                 ? "Uploading..."
                 : "Click the camera icon to update your photo"}
             </p>
@@ -112,9 +91,9 @@ const ProfilePage = ({ authUser, setAuthUser }) => {
                 <button
                   className="btn btn-primary btn-sm self-center"
                   onClick={handleUpdateName}
-                  disabled={isUpdating || fullName === authUser?.fullName}
+                  disabled={isUpdateProfile || fullName === authUser?.fullName}
                 >
-                  {isUpdating ? (
+                  {isUpdateProfile ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
                     "Save"

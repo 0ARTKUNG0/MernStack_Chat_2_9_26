@@ -1,21 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MessageSquare, Settings, User, LogOut } from "lucide-react";
-import toast from "react-hot-toast";
-import axiosInstance from "../lib/axios";
+import { useAuthStore } from "../store/useAuthStore";
 
-const Navbar = ({ authUser, setAuthUser }) => {
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await axiosInstance.post("/auth/signout");
-      setAuthUser(null);
-      toast.success("Logged out successfully");
-      navigate("/signin");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
-    }
-  };
+const Navbar = () => {
+  const { signOut } = useAuthStore();
 
   return (
     <header className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 backdrop-blur-lg bg-base-100/80">
@@ -37,10 +25,11 @@ const Navbar = ({ authUser, setAuthUser }) => {
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
             </Link>
-            <button className="btn btn-sm gap-2" onClick={handleLogout}>
+            <button className="btn btn-sm gap-2" onClick={signOut}>
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Logout</span>
             </button>
+
           </div>
         </div>
       </div>
