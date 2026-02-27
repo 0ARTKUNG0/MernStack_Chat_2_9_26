@@ -8,13 +8,15 @@ const messageSchema = new Schema({
     file: {
         type: String,
     },
-    sender: {
+    senderid: {
         type: Schema.Types.ObjectId,
         ref: "User",
+        required: true
     },
-    recipient: {
+    recipientid: {
         type: Schema.Types.ObjectId,
         ref: "User",
+        required: true
     }
 },{
     timestamps: true

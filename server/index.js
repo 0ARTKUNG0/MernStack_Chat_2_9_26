@@ -4,27 +4,20 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const userRouter = require("./router/user.router");
+const messageRouter = require("./router/message.router");
+const {app, server} = require("./lib/socket");
 
 dotenv.config();
 
-const app = express();
 const PORT = process.env.PORT;
 const MONGODB_URL = process.env.MONGODB_URL;
 
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "500mb" }));
 
 const allowedOrigins = [process.env.BASE_URL];
 
 app.use(cors({
-    origin: function (origin, callback) {
-        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-            callback(null, true);
-        } else {
-            callback(new Error("Not allowed by CORS"));
-        }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
+    origin: process.env.BASE_URL,
     credentials: true
 }));
 
@@ -35,6 +28,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/v1/auth", userRouter);
+app.use("/api/v1/messages", messageRouter);
 
 if(!MONGODB_URL){
     console.error("MongoDB URL is missing. Please set it in your .env file.");
@@ -49,6 +43,6 @@ if(!MONGODB_URL){
     });
 }
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
