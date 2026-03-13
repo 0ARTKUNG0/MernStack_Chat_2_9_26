@@ -1,27 +1,28 @@
 import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
-import API from "../services/api";
+import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
 
-const Sidebar = ({ selectedUser, setSelectedUser }) => {
-  const [users, setUsers] = useState([]);
+const Sidebar = () => {
+  const { users, getUsers, selectedUser, setSelectedUser, isUserLoading } = useChatStore();
+  const { onlineUsers } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    getUsers();
+  }, [getUsers]);
 
-  const fetchUsers = async () => {
-    try {
-      const res = await API.get("/api/v1/auth/users");
-      setUsers(res.data.users);
-    } catch (error) {
-      console.log("Failed to fetch users:", error);
-    }
-  };
+  const filteredUsers = showOnlineOnly
+    ? users.filter((u) => onlineUsers.includes(u._id))
+    : users;
 
-  // Online status will be handled by Socket.io later
-  const onlineUsers = users.filter((u) => u.isOnline);
-  const filteredUsers = showOnlineOnly ? onlineUsers : users;
+  if (isUserLoading) {
+    return (
+      <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col items-center justify-center">
+        <span className="loading loading-spinner loading-md"></span>
+      </aside>
+    );
+  }
 
   return (
     <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
@@ -41,46 +42,49 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
             <span className="text-sm">Show online only</span>
           </label>
           <span className="text-xs text-zinc-500">
-            ({onlineUsers.length} online)
+            ({onlineUsers.length - 1 > 0 ? onlineUsers.length - 1 : 0} online)
           </span>
         </div>
       </div>
 
       <div className="overflow-y-auto w-full py-3">
-        {filteredUsers.map((user) => (
-          <button
-            key={user._id}
-            onClick={() => setSelectedUser(user)}
-            className={`w-full p-3 flex items-center gap-3 hover:bg-base-300 transition-colors ${
-              selectedUser?._id === user._id
-                ? "bg-base-300 ring-1 ring-base-300"
-                : ""
-            }`}
-          >
-            <div className="relative mx-auto lg:mx-0">
-              <div className="size-12 rounded-full bg-base-300 flex items-center justify-center text-lg font-medium overflow-hidden">
-                {user.profilePic ? (
-                  <img
-                    src={user.profilePic}
-                    alt={user.fullName}
-                    className="size-12 object-cover rounded-full"
-                  />
-                ) : (
-                  user.fullName.charAt(0)
+        {filteredUsers.map((user) => {
+          const isOnline = onlineUsers.includes(user._id);
+          return (
+            <button
+              key={user._id}
+              onClick={() => setSelectedUser(user)}
+              className={`w-full p-3 flex items-center gap-3 hover:bg-base-300 transition-colors ${
+                selectedUser?._id === user._id
+                  ? "bg-base-300 ring-1 ring-base-300"
+                  : ""
+              }`}
+            >
+              <div className="relative mx-auto lg:mx-0">
+                <div className="size-12 rounded-full bg-base-300 flex items-center justify-center text-lg font-medium overflow-hidden">
+                  {user.profilePic ? (
+                    <img
+                      src={user.profilePic}
+                      alt={user.fullName}
+                      className="size-12 object-cover rounded-full"
+                    />
+                  ) : (
+                    user.fullName.charAt(0)
+                  )}
+                </div>
+                {isOnline && (
+                  <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
                 )}
               </div>
-              {user.isOnline && (
-                <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
-              )}
-            </div>
-            <div className="hidden lg:block text-left min-w-0">
-              <div className="font-medium truncate">{user.fullName}</div>
-              <div className="text-sm text-zinc-400">
-                {user.isOnline ? "Online" : "Offline"}
+              <div className="hidden lg:block text-left min-w-0">
+                <div className="font-medium truncate">{user.fullName}</div>
+                <div className="text-sm text-zinc-400">
+                  {isOnline ? "Online" : "Offline"}
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
 
         {filteredUsers.length === 0 && (
           <div className="text-center text-zinc-500 py-4">No online users</div>

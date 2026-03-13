@@ -1,10 +1,12 @@
 import { useState, useRef } from "react";
 import { Send, Image, X } from "lucide-react";
+import { useChatStore } from "../store/useChatStore";
 
 const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
+  const { sendMessage, isSending } = useChatStore();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -21,11 +23,15 @@ const MessageInput = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
-    // TODO: Connect to API / Socket
-    console.log("Send message:", { text, image: imagePreview });
+
+    await sendMessage({
+      text: text.trim(),
+      file: imagePreview,
+    });
+
     setText("");
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -81,9 +87,13 @@ const MessageInput = () => {
         <button
           type="submit"
           className="btn btn-sm btn-circle btn-primary"
-          disabled={!text.trim() && !imagePreview}
+          disabled={(!text.trim() && !imagePreview) || isSending}
         >
-          <Send size={22} />
+          {isSending ? (
+            <span className="loading loading-spinner loading-xs"></span>
+          ) : (
+            <Send size={22} />
+          )}
         </button>
       </form>
     </div>

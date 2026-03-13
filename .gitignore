@@ -3,3 +3,4 @@ CLAUDE
 MERN_Chat_App.postman_collection.json
 *.claude
 *package-lock.json
+*socket_workflow.md

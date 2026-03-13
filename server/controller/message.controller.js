@@ -1,6 +1,7 @@
 const Message = require("../model/message.model");
 const User = require("../model/user.model");
 const cloudinary = require("../config/cloudinary.config");
+const { getRecipientSocketId, io } = require("../lib/socket");
 
 const getUsersForSidebar = async (req, res) => {
     try{
@@ -38,6 +39,13 @@ const sendMessage = async (req, res) => {
             file: fileUrl
         });
         await newMessage.save();
+
+        // Emit realtime event to receiver
+        const receiverSocketId = getRecipientSocketId(recipientId);
+        if(receiverSocketId){
+            io.to(receiverSocketId).emit("newMessage", newMessage);
+        }
+
         res.json(newMessage);
     }catch(error){
         console.log(error);
@@ -65,7 +73,7 @@ const getMessages = async (req, res) => {
 const messageController = {
     getUsersForSidebar,
     sendMessage,
-    getMessages
+    getMessages,
 }
 
 module.exports = messageController;
